@@ -21,6 +21,8 @@ import {
   TIER_MULTS,
   TIER_NAMES,
   TIER_BLOCKS,
+  levelToTier,
+  elementSkillName,
 } from './skills.js';
 import { TYPES, INTENT_LABELS } from './enemies.js';
 
@@ -84,11 +86,14 @@ export const EMBER_CLASH = {
   },
 
   // The damage-tier system (data): cost/multiplier/name per tier + the
-  // 5-level blocks each tier is learnable in.
+  // 5-level blocks each tier is learnable in, plus the level->tier resolver
+  // and the (element, tier) -> player skill-name lookup.
   tierCosts: TIER_COSTS,
   tierMults: TIER_MULTS,
   tierNames: TIER_NAMES,
   tierBlocks: TIER_BLOCKS,
+  levelToTier,
+  elementSkillName,
 
   // Skill catalogs (data).
   skills: SKILLS,

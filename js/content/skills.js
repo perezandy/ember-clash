@@ -24,6 +24,17 @@ export const TIER_NAMES = ['Keen', 'Mighty', 'Brutal', 'Crushing', 'Cataclysmic'
 export const TIER_BLOCKS = [[1, 5], [6, 10], [11, 15], [16, 20], [21, 25]];
 export const TIER_COSTS = [15, 25, 35, 45, 55];
 
+// The tier (0-4) a level sits in, per the shared 5-level blocks. Levels past
+// the top block stay at the top tier. Enemies resolve their spell tier from
+// the hero's level via this, so they always match the player's power.
+export function levelToTier(level) {
+  for (let i = 0; i < TIER_BLOCKS.length; i++) {
+    const [lo, hi] = TIER_BLOCKS[i];
+    if (level >= lo && level <= hi) return i;
+  }
+  return level < TIER_BLOCKS[0][0] ? 0 : TIER_BLOCKS.length - 1;
+}
+
 export const SKILLS = [
   {
     id: 'powerstrike',
@@ -553,17 +564,27 @@ export const ENEMY_SKILLS = {
   crystallineshell: { id: 'crystallineshell', name: 'Crystalline Shell', desc: 'Gain defense for 5 turns.', buff: { defense: { bonus: 0.5, turns: 5 } }, log: 'hardens into a crystalline shell (5 turns of defense)' },
   crystaldrain: { id: 'crystaldrain', name: 'Crystal Lance', desc: 'Lance the hero’s energy bar (drains ⭐).', drainEnergy: true },
   // Boss: The Lich (stage 30).
-  frostbolt: { id: 'frostbolt', name: 'Frost Bolt', desc: 'A ❄️ spell dealing 150% damage.', type: 'damage', mult: 1.5, element: 'ice' },
-  chainlightning: { id: 'chainlightning', name: 'Chain Lightning', desc: 'A ⚡ spell dealing 150% damage.', type: 'damage', mult: 1.5, element: 'lightning' },
+  // Boss spells: element damage that the engine scales to the hero's current
+  // tier (mult + name + FX intensity), so they match the player's power.
+  frostbolt: { id: 'frostbolt', name: 'Frost Bolt', desc: 'An ❄️ spell.', type: 'damage', element: 'ice' },
+  chainlightning: { id: 'chainlightning', name: 'Chain Lightning', desc: 'A ⚡ spell.', type: 'damage', element: 'lightning' },
   wither: { id: 'wither', name: "Lich's Wither", desc: "Lowers the hero's defense for 5 turns.", defenseDown: { bonus: 0.5, turns: 5 }, log: `casts Lich's Wither — your defense crumbles (5 turns)!` },
   // Boss: The Ember Wyrm (stage 40).
-  infernobolt: { id: 'infernobolt', name: 'Inferno Bolt', desc: 'A 🔥 spell dealing 150% damage (15% chance to set Burning).', type: 'damage', mult: 1.5, element: 'fire' },
+  infernobolt: { id: 'infernobolt', name: 'Inferno Bolt', desc: 'A 🔥 spell (15% chance to set Burning).', type: 'damage', element: 'fire' },
   fury: { id: 'fury', name: 'Dragon Fury', desc: 'Gain 40% more attack for 5 turns.', buff: { damage: { bonus: 0.4, turns: 5 } }, log: 'rages — +40% attack for 5 turns!' },
 };
 
 // Skills learnable at a given player level (randomized pool per level range).
 export function poolFor(level) {
   return SKILLS.filter((s) => s.pool && level >= s.pool[0] && level <= s.pool[1]);
+}
+
+// The player skill name for (element, tier) — the single source of truth is
+// the skill catalog (exactly one element skill per element per tier). Used so
+// enemy element spells carry the same name the player's equivalent does.
+export function elementSkillName(element, tier) {
+  const s = SKILLS.find((x) => x.element === element && x.cost === TIER_COSTS[tier]);
+  return s ? s.name : null;
 }
 
 // The damage line a skill belongs to: its element, or blade/blunt for

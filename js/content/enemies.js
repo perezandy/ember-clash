@@ -12,7 +12,6 @@
 // Adding/changing/removing a monster = editing only this file.
 import { TUNING } from './tuning.js';
 import { weightedPick } from '../core/rng.js';
-import { TIER_MULTS } from './skills.js';
 
 // Creature-based types. `slash` = Power Strike multiplier, `blunt` = Attack.
 // `element` = strengths (1.5x) and weaknesses (0.5x) of the creature against
@@ -186,11 +185,10 @@ export function createEnemy(stage, baseIndex) {
     // GENERIC schema fields (consumed by the engine / app layer):
     behavior: base.behavior ?? null,
     loot: base.loot ?? null,
-    // A Warden's basic attack is lightning at the tier of its 10-stage area
-    // (T1 1.25x ... T5 2.25x). Expressed as a generic attackStyle.
-    attackStyle: base.attackStyle
-      ? { fx: base.attackStyle, tier: Math.min(4, Math.floor((stage - 1) / 10)), mult: TIER_MULTS[Math.min(4, Math.floor((stage - 1) / 10))] }
-      : null,
+    // A Warden's basic attack is lightning. Its tier/mult are resolved at
+    // combat time from the hero's level (matching the player's power);
+    // only the fx type is fixed here.
+    attackStyle: base.attackStyle ? { fx: base.attackStyle } : null,
   };
 }
 

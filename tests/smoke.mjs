@@ -329,6 +329,8 @@ async function testBossSkills() {
   assert.equal(1000 - cb.p.hp, Math.max(1, hit150 - 4), 'Chain Lightning respects the halved defense');
 
   // The Ember Wyrm (stage 40): fire spell + Dragon Fury (+40% atk, 5 turns).
+  // The hero is level 30 -> top tier (Cataclysmic, 2.25x), so the fire
+  // spell strikes at 2.25x the stage-scaled atk.
   const p2 = new Player({ level: 30 });
   p2.stats0.magic = 100;
   p2.stats0.defense = 0;
@@ -337,10 +339,11 @@ async function testBossSkills() {
   c2.start();
   c2.enemy.critChance = 0;
   const atk2 = wyrm.atk;
+  const wyrmMult = 2.25; // level 30 -> T5
 
   c2.p.hp = 1000;
   cast(c2, 'infernobolt');
-  assert.equal(1000 - c2.p.hp, Math.max(1, Math.round(atk2 * 1.5)), 'Inferno Bolt = 150% of stage-scaled atk');
+  assert.equal(1000 - c2.p.hp, Math.max(1, Math.round(atk2 * wyrmMult)), 'Inferno Bolt = hero-tier (2.25x) of stage-scaled atk');
 
   cast(c2, 'fury');
   assert.equal(c2.e.buffs.damage.turns, 5, 'Dragon Fury lasts 5 turns');
@@ -349,7 +352,7 @@ async function testBossSkills() {
   // Fury strengthens the next fire spell.
   c2.p.hp = 1000;
   cast(c2, 'infernobolt');
-  assert.equal(1000 - c2.p.hp, Math.max(1, Math.round(atk2 * 1.5 * 1.4)), 'Fury strengthens Inferno Bolt');
+  assert.equal(1000 - c2.p.hp, Math.max(1, Math.round(atk2 * wyrmMult * 1.4)), 'Fury strengthens Inferno Bolt');
 
   unpinned();
   TUNING.combat.damageVariance = prevVariance;
@@ -642,17 +645,20 @@ async function testWardenLightning() {
   TUNING.combat.damageVariance = 0;
   const realRandom = Math.random;
 
-  // Stage 15 warden (cavern, tier 2 = 1.5x) and stage 25 (dungeon, 1.75x).
+  // Stage 15 and 25 Wardens are lightning constructs. The attackStyle now
+  // carries only the fx type; its tier/mult are resolved at combat time from
+  // the hero's level (matching the player's power).
   const w15 = createEnemy(15, 0);
   assert.equal(w15.id, 'warden', 'cavern pool has the Warden');
-  assert.equal(w15.attackStyle.mult, 1.5, 'stage-15 Warden strikes at tier 2 (1.5x)');
+  assert.equal(w15.attackStyle.fx, 'lightning', 'stage-15 Warden is a lightning construct');
   const w25 = createEnemy(25, 2);
   assert.equal(w25.id, 'warden', 'dungeon pool has the Warden');
-  assert.equal(w25.attackStyle.mult, 1.75, 'stage-25 Warden strikes at tier 3 (1.75x)');
+  assert.equal(w25.attackStyle.fx, 'lightning', 'stage-25 Warden is a lightning construct');
   const grunt = createEnemy(1, 0);
   assert.equal(grunt.attackStyle, null, 'non-styled enemies have no attack style');
 
-  // Damage math: 1.5x the stage-scaled atk (variance off, no defense).
+  // Damage math: a level-10 hero is T2 (Mighty, 1.5x), so the Warden's
+  // lightning strikes at 1.5x the stage-scaled atk (variance off, no defense).
   const p = new Player({ level: 10 });
   p.stats0.magic = 100;
   p.stats0.defense = 0;
@@ -665,7 +671,7 @@ async function testWardenLightning() {
   c.enemyDamage(1);
   const dealt = 1000 - c.p.hp;
   Math.random = realRandom;
-  assert.equal(dealt, Math.max(1, Math.round(w.atk * 1.5)), 'warden lightning = 1.5x stage-scaled atk at stage 15');
+  assert.equal(dealt, Math.max(1, Math.round(w.atk * 1.5)), 'warden lightning = 1.5x stage-scaled atk vs a level-10 hero (T2)');
 
   TUNING.combat.damageVariance = prevVariance;
 }

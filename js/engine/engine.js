@@ -323,6 +323,18 @@ export class BattleEngine {
     const foe = side === 'p' ? this.e : this.p;
     const kind = side === 'p' ? 'player' : 'enemy';
 
+    // Enemy element spells mirror the hero's current tier: the same mult,
+    // the player's equivalent spell name, and the same FX intensity — so a
+    // mid-campaign boss casts a Crushing-tier bolt, not a fixed 150%.
+    if (side === 'e' && sk.element) {
+      const tier = this.content.levelToTier(this.hero.level);
+      sk = {
+        ...sk,
+        mult: this.content.tierMults[tier],
+        name: this.content.elementSkillName(sk.element, tier) ?? sk.name,
+      };
+    }
+
     if (sk.hpCostFrac) me.hp = Math.max(1, me.hp - Math.round(me.maxHp * sk.hpCostFrac));
     this.bus.emit('log', {
       text: side === 'p'
@@ -491,13 +503,22 @@ export class BattleEngine {
   enemyDamage(mult = 1, label = null, element = null) {
     const t = this.content.tuning;
     const ps = this.hero.stats();
-    const styleMult = this.e.attackStyle?.mult ?? 1;
-    const light = this.e.attackStyle?.fx === 'lightning';
+    // A styled attack (e.g. a Warden's lightning) scales to the hero's
+    // current tier and carries the player's equivalent spell name.
+    let styleMult = 1;
+    let light = false;
+    let styleName = null;
+    if (this.e.attackStyle) {
+      const tier = this.content.levelToTier(this.hero.level);
+      styleMult = this.content.tierMults[tier];
+      light = this.e.attackStyle.fx === 'lightning';
+      if (light) styleName = this.content.elementSkillName('lightning', tier);
+    }
     const variance = 1 + (this.rng() * 2 - 1) * t.combat.damageVariance;
     let dmg = Math.max(1, Math.round(this.enemy.atk * mult * variance * (1 + (this.e.buffs.damage?.bonus ?? 0)) * styleMult));
     const hitChance = clamp(this.eHit + (this.e.buffs.hit?.bonus ?? 0) - ps.evasion, 0.05, 0.95);
     if (this._chance(1 - hitChance)) {
-      this.bus.emit('log', { text: `${this.enemy.name} misses ${label ?? (light ? 'its lightning bolt' : 'its attack')}!`, kind: 'enemy' });
+      this.bus.emit('log', { text: `${this.enemy.name} misses ${label ?? (light && styleName ? styleName : light ? 'its lightning bolt' : 'its attack')}!`, kind: 'enemy' });
       this.bus.emit('sfx', { name: 'miss' });
       return;
     }
@@ -514,7 +535,7 @@ export class BattleEngine {
     if (crit) dmg = Math.max(dmg, Math.round(dmg * this.enemy.critDamage));
     if (this.p.meditating) dmg *= 2;
     this.p.hp = Math.max(0, this.p.hp - dmg);
-    this.bus.emit('log', { text: `${crit ? 'CRITICAL! ' : ''}${this.enemy.name} ${label ? `hits you with ${label} for` : light ? 'hurls a lightning bolt for' : 'hits you for'} ${dmg}.`, kind: 'enemy' });
+    this.bus.emit('log', { text: `${crit ? 'CRITICAL! ' : ''}${this.enemy.name} ${label ? `hits you with ${label} for` : light && styleName ? `uses ${styleName} for` : light ? 'hurls a lightning bolt for' : 'hits you for'} ${dmg}.`, kind: 'enemy' });
     this.bus.emit('hit', { target: 'player', crit });
     this.bus.emit('sfx', { name: 'hurt' });
     if (this.p.parry) {
@@ -571,9 +592,10 @@ export class BattleEngine {
         (charged ? t.combat.enemyChargeMultiplier : 1);
       this.enemyDamage(mult);
       // FX: a styled basic attack (e.g. a lightning construct) shows its
-      // style; everything else is a default-weapon swing.
+      // style at the hero's current tier; everything else is a default-weapon
+      // swing.
       if (this.e.attackStyle) {
-        this.emitFx('enemy', this.e.attackStyle.fx, this.e.attackStyle.tier ?? 1);
+        this.emitFx('enemy', this.e.attackStyle.fx, this.content.levelToTier(this.hero.level));
       } else {
         this.emitFx('enemy', this.content.fx.weapon.default, 0);
       }
