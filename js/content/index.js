@@ -66,6 +66,7 @@ export const EMBER_CLASH = {
     element: { fire: 'fire', ice: 'ice', lightning: 'lightning' },
     weapon: { blade: 'slash', default: 'blunt' },
     heal: 'heal',
+    energy: 'energy',
   },
 
   // The ordered set of per-side status slots the engine tracks.

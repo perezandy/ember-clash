@@ -346,7 +346,9 @@ export class BattleEngine {
     }
     if (sk.meditate) {
       me.meditating = true;
+      const enBefore = me.energy;
       me.energy = Math.min(me.energy + Math.round(me.maxEnergy * 0.25), me.maxEnergy);
+      if (me.energy > enBefore) this.emitFx(kind, this.content.fx.energy, 0);
     }
     if (sk.chargeMult) me.swing = sk.chargeMult;
     if (sk.guaranteeNext) me.guarantee = true;
@@ -464,6 +466,10 @@ export class BattleEngine {
     if (fx.energy) {
       this.p.energy = Math.min(this.p.maxEnergy, this.p.energy + fx.energy);
     }
+    // FX for whatever was actually restored (centered on the caster):
+    // heal and/or energy, so an elixir plays both.
+    if (this.p.hp > hpBefore) this.emitFx('player', this.content.fx.heal, 0);
+    if (this.p.energy > enBefore) this.emitFx('player', this.content.fx.energy, 0);
     const parts = [];
     if (this.p.hp > hpBefore) parts.push(`recover ${this.p.hp - hpBefore} ❤️`);
     if (this.p.energy > enBefore) parts.push(`recover ${this.p.energy - enBefore} ⭐`);

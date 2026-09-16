@@ -41,7 +41,10 @@ export class AttackFx {
     });
     const from = side === 'player' ? px(a, 0.85, 0.4) : px(a, 0.15, 0.4);
     const to = side === 'player' ? px(o, 0.5, 0.45) : px(o, 0.5, 0.45);
-    return { from, to };
+    // Body centre of the caster — used by self-effects (heal / energy) so the
+    // sparkles sit on the hero rather than at the attack-origin "hand".
+    const self = px(a, 0.5, 0.5);
+    return { from, to, self };
   }
 
   play(d) {
@@ -51,10 +54,10 @@ export class AttackFx {
     // normalize so the caster/target sprites resolve on the correct side.
     const isPlayer = d.side === 'player' || d.side === 'p';
     const side = isPlayer ? 'player' : 'enemy';
-    const { from, to } = this.anchors(side);
+    const { from, to, self } = this.anchors(side);
     const scale = isPlayer ? 1 : 0.7;
     const t0 = performance.now();
-    const clip = this.makeClip(d.kind, d.tier, from, to, scale);
+    const clip = this.makeClip(d.kind, d.tier, from, to, scale, self);
     if (!clip) return;
     this.clips.push({ ...clip, t0 });
     if (clip.shake) this.shake = { amp: clip.shake, t0, dur: 260 };
@@ -117,14 +120,15 @@ export class AttackFx {
     };
   }
 
-  makeClip(kind, tier, from, to, scale) {
+  makeClip(kind, tier, from, to, scale, self) {
     switch (kind) {
       case 'slash': return this.slash(from, to, tier, scale);
       case 'blunt': return this.blunt(from, to, tier, scale);
       case 'fire': return this.fire(from, to, tier, scale);
       case 'ice': return this.ice(from, to, tier, scale);
       case 'lightning': return this.lightning(from, to, tier, scale);
-      case 'heal': return this.heal(from, scale);
+      case 'heal': return this.heal(self, scale);
+      case 'energy': return this.energy(self, scale);
       default: return null;
     }
   }
@@ -561,8 +565,8 @@ export class AttackFx {
     };
   }
 
-  // --- Heal: green sparkles rising around the caster ---
-  heal(from, scale) {
+  // --- Heal: green sparkles rising around the caster's body ---
+  heal(self, scale) {
     const dur = 800;
     const rnd = this.rnd(999);
     const parts = Array.from({ length: 16 }, () => ({
@@ -580,8 +584,8 @@ export class AttackFx {
         ctx.globalCompositeOperation = 'lighter';
         for (const pt of parts) {
           const f = p * pt.sp / 100;
-          const y = from.y + 60 * scale - f * 90 * scale + Math.sin(p * 6 + pt.ph) * 8;
-          const x = from.x + pt.x * scale + Math.sin(p * 4 + pt.ph) * 14 * scale;
+          const y = self.y + 55 * scale - f * 110 * scale + Math.sin(p * 6 + pt.ph) * 8;
+          const x = self.x + pt.x * scale + Math.sin(p * 4 + pt.ph) * 14 * scale;
           const a = Math.sin(Math.PI * Math.min(1, p * 1.2));
           ctx.strokeStyle = `rgba(140, 255, 170, ${0.85 * a})`;
           ctx.lineWidth = 2 * scale;
@@ -591,6 +595,47 @@ export class AttackFx {
           ctx.lineTo(x + r, y);
           ctx.moveTo(x, y - r);
           ctx.lineTo(x, y + r);
+          ctx.stroke();
+        }
+        ctx.restore();
+      },
+    };
+  }
+
+  // --- Energy: golden diamond sparkles rising around the caster's body
+  // (matches the ⭐ bar). Distinct from heal's green crosses so the two can
+  // play together.
+  energy(self, scale) {
+    const dur = 800;
+    const rnd = this.rnd(4242);
+    const parts = Array.from({ length: 18 }, () => ({
+      x: (rnd() - 0.5) * 90,
+      y: (rnd() - 0.5) * 40,
+      sp: 40 + rnd() * 70,
+      r: 2 + rnd() * 4,
+      ph: rnd() * Math.PI * 2,
+    }));
+    return {
+      dur,
+      draw(p, ctx) {
+        if (p > 1) return;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (const pt of parts) {
+          const f = p * pt.sp / 100;
+          const y = self.y + 55 * scale - f * 110 * scale + Math.sin(p * 6 + pt.ph) * 8;
+          const x = self.x + pt.x * scale + Math.sin(p * 4 + pt.ph) * 14 * scale;
+          const a = Math.sin(Math.PI * Math.min(1, p * 1.2));
+          ctx.strokeStyle = `rgba(255, 210, 80, ${0.9 * a})`;
+          ctx.lineWidth = 2 * scale;
+          const r = pt.r * scale;
+          // 4-point diamond sparkle.
+          ctx.beginPath();
+          ctx.moveTo(x, y - r * 1.4);
+          ctx.lineTo(x + r, y);
+          ctx.lineTo(x, y + r * 1.4);
+          ctx.lineTo(x - r, y);
+          ctx.closePath();
           ctx.stroke();
         }
         ctx.restore();
