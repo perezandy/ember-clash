@@ -45,9 +45,14 @@ export class AttackFx {
   }
 
   play(d) {
+    if (!d || !d.kind) return;
     if (this.w === undefined) this.resize();
-    const { from, to } = this.anchors(d.side);
-    const scale = d.side === 'enemy' ? 0.7 : 1;
+    // The engine emits 'player'/'enemy' (basic attacks) and 'p'/'e' (skills);
+    // normalize so the caster/target sprites resolve on the correct side.
+    const isPlayer = d.side === 'player' || d.side === 'p';
+    const side = isPlayer ? 'player' : 'enemy';
+    const { from, to } = this.anchors(side);
+    const scale = isPlayer ? 1 : 0.7;
     const t0 = performance.now();
     const clip = this.makeClip(d.kind, d.tier, from, to, scale);
     if (!clip) return;
@@ -144,17 +149,17 @@ export class AttackFx {
         const len = Math.hypot(dx, dy);
         const nx = -dy / len, ny = dx / len;
         const mid = { x: from.x + dx * 0.5, y: from.y + dy * 0.5 };
-        for (const s of streaks) {
-          const t = (p * dur - s.off) / 180; // per-streak progress
+        for (const st of streaks) {
+          const t = (p * dur - st.off) / 180; // per-streak progress
           if (t < 0 || t > 1) continue;
           const sweep = 0.15 + t * 0.85;
           ctx.save();
           ctx.globalCompositeOperation = 'lighter';
           for (let i = 0; i <= 14; i++) {
-            const u = Math.max(0, sweep - s.len) + (s.len * i) / 14;
+            const u = Math.max(0, sweep - st.len) + (st.len * i) / 14;
             if (u > sweep) break;
-            const bx = from.x + dx * u + nx * s.bow * len * 0.18 * Math.sin(Math.PI * u);
-            const by = from.y + dy * u + ny * s.bow * len * 0.18 * Math.sin(Math.PI * u);
+            const bx = from.x + dx * u + nx * st.bow * len * 0.18 * Math.sin(Math.PI * u);
+            const by = from.y + dy * u + ny * st.bow * len * 0.18 * Math.sin(Math.PI * u);
             const a = Math.sin(Math.PI * (i / 14));
             ctx.strokeStyle = `rgba(220, 240, 255, ${0.75 * a})`;
             ctx.lineWidth = (10 - i * 0.35) * s;

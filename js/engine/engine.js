@@ -417,7 +417,7 @@ export class BattleEngine {
       }
     }
     const fx = this.skillFx(sk);
-    if (fx) this.emitFx(side, fx.kind, fx.tier);
+    if (fx) this.emitFx(side === 'p' ? 'player' : 'enemy', fx.kind, fx.tier);
 
     // Conditional status (data-driven): any content status whose trigger
     // element matches the skill's element can land here (e.g. fire -> burn).
