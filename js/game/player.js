@@ -1,8 +1,8 @@
-import { TUNING } from '../config/tuning.js';
+import { TUNING } from '../content/tuning.js';
 import { EQUIPMENT, EQUIPMENT_SLOTS } from './equipment.js';
 import { xpForNext } from './upgrades.js';
 import { randInt } from '../core/rng.js';
-import { MAX_SKILLS as MAX_SKILLS_CAP, SKILLS } from './skills.js';
+import { MAX_SKILLS as MAX_SKILLS_CAP, SKILLS } from '../content/skills.js';
 
 export class Player {
   constructor({

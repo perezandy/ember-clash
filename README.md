@@ -105,51 +105,100 @@ Option B — **`gh-pages` branch:**
 1. Create a `gh-pages` branch containing `index.html`, `css/`, `js/` at its root.
 2. Push it; GitHub Pages serves it at `https://user.github.io/repo-name/`.
 
-## Architecture (locality of change)
+## Architecture (decoupled engine + content pack)
+
+The game is split into three layers so the battle engine is **fully
+reusable** and all Ember-Clash-specific data lives in one content pack:
 
 ```
 index.html            DOM skeleton for all screens; loads js/main.js as an ES module
 css/styles.css        All styling
 assets/bg/            Battle environment pixel art (AI-generated, studio pipeline)
 assets/sprites/       Hand-crafted vector SVG characters (primitives + Bezier paths, layered <g> groups, gradient shading)
-js/config/tuning.js   Every balance number. Tune the game here only.
-js/core/events.js     Tiny typed event bus — the contract between game and UI
-js/core/rng.js        Random helpers
-js/core/save.js       Versioned localStorage persistence (key: combat-game.save.v3)
-js/game/player.js     Player model: persisted fields + derived stats
-js/game/upgrades.js   XP curve (stat boosts live in equipment.js now)
-js/game/equipment.js   Data-driven equipment catalog: 4 slots x 5 tiers (add a piece = add an entry)
-js/game/skills.js     Data-driven skill catalog: effects, energy cost, learnable level ranges
-js/game/bestiary.js   Bestiary records of defeated creatures
-js/game/enemies.js    Enemy types, bosses, per-stage scaling, AI intents, limited per-stage pools
-js/game/combat.js     Turn-based combat state machine (no DOM access)
-js/game/progression.js  XP/levels, stage rewards, stage advancing
-js/ui/screens.js      Screen switching
-js/ui/hud.js          Bars/sprites from 'state'/'phase' events; recolors the hero model per equipment
-js/ui/equipIcons.js   Tier color schemes + inline item SVGs for the shop
-js/ui/log.js         Combat log from 'log' events
-js/main.js            Wiring only: owns the save object and routes events
-tests/smoke.mjs       Node smoke test for all DOM-free modules
+
+js/engine/engine.js   GENERIC battle engine. Zero imports, zero knowledge of
+                      Ember Clash. Injected with a content pack + host adapter
+                      ({bus, rng, delay}); owns the turn state machine, damage
+                      math, skill activation, buff/status system, AI intent
+                      rolling and fx description.
+
+js/content/           EMBER CLASH CONTENT PACK (data + pure content functions).
+  tuning.js           Every balance number. Tune the game here only.
+  skills.js           Data-driven skill + enemy-skill catalogs, the tier system.
+  enemies.js          Creature types/elements, enemy defs, per-stage pools,
+                      biome bosses, and the stage -> enemy factory.
+  index.js            Assembles the pack the engine is injected with.
+
+js/game/              EMBER CLASH APP (host: wires the engine to Ember Clash).
+  combat.js           `Combat` — a thin `BattleEngine` subclass that injects
+                      the Ember Clash pack + host services (bus/rng/timer).
+  player.js           Player model: persisted fields + derived stats (the generic hero).
+  progression.js      XP/levels, stage rewards, stage advancing, skill learning.
+  equipment.js        Data-driven equipment catalog: 4 slots x 5 tiers.
+  upgrades.js         XP curve.
+  bestiary.js         Bestiary records of defeated creatures.
+
+js/core/              Generic infrastructure (shared by engine + app).
+  events.js           Tiny typed event bus — the contract between game and UI.
+  rng.js              Random helpers.
+  save.js             Versioned localStorage persistence (key: combat-game.save.v5).
+  audio.js            WebAudio SFX (mute toggle).
+
+js/ui/                UI (never imports game; reads bus events only).
+  screens.js          Screen switching.
+  hud.js              Bars/sprites from 'state'/'phase' events; recolors the hero model per equipment.
+  equipIcons.js       Tier color schemes + inline item SVGs for the shop.
+  log.js              Combat log from 'log' events.
+  attackFx.js         Canvas particle FX from 'fx' events.
+
+js/main.js            App wiring: owns the save object and routes events.
+tests/smoke.mjs       Node smoke test for all DOM-free modules.
 ```
+
+**The three layers and their boundaries:**
+
+- **Engine (`js/engine/`)** — generic and content-agnostic. It reads
+  everything through the injected `content` pack and `adapter`, and reads the
+  hero through a small interface (`stats()`, `skills`, `items`,
+  `removeItem()`). It imports **nothing** from `content/` or `game/`.
+- **Content (`js/content/`)** — every Ember-Clash fact: skills, monster
+  types, the tier system, statuses, fx mapping, tuning. Data + pure
+  functions only. It imports nothing from the engine.
+- **App (`js/game/`, `js/main.js`)** — Ember-Clash glue: builds the hero
+  (Player) and enemies, constructs `Combat` (injecting the pack), and routes
+  bus events to the UI.
 
 **Rules that keep changes local:**
 
 - **Game modules never import UI modules, and UI modules never import game
   modules.** They communicate only through the `EventBus` names documented in
-  `js/core/events.js` (`log`, `state`, `phase`, `hit`).
-- **Balance changes** → edit `js/config/tuning.js` only.
-- **New equipment piece** → add an entry to `EQUIPMENT` in `js/game/
-  equipment.js` (and its color scheme in `js/ui/equipIcons.js`).
-- **New upgrade** (old system, retired) → see equipment.
-- **New enemy type** → add one entry to `BASES` in `js/game/enemies.js`.
+  `js/core/events.js` (`log`, `state`, `phase`, `hit`, `fx`, `sfx`).
+- **Balance changes** → edit `js/content/tuning.js` only.
+- **New/changed skill** (player or enemy) → add one entry to `SKILLS` /
+  `ENEMY_SKILLS` in `js/content/skills.js`. The engine interprets the
+  declarative effect fields; no engine or app code changes.
+- **New/changed monster** → add one entry to `ENEMY_DEFS` (and, if new, its
+  `type` to `TYPES`) in `js/content/enemies.js`. Give it a sprite id and add
+  the SVG to `assets/sprites/`. Optional generic schema fields:
+  `behavior: 'fleeOnHit'`, `attackStyle: {fx, mult, tier}`, `loot: {gold,
+  items}`, `elementWeakness: {...}`.
+- **New equipment piece** → add an entry to `EQUIPMENT` in `js/game/equipment.js`
+  (and its color scheme in `js/ui/equipIcons.js`).
+- **New status effect** → add it to `content.statuses` in `js/content/index.js`
+  (a conditional status carries `element` + `chance`; a tick status carries a
+  `tickLog`), list its key in `content.buffKeys`, and add its label to
+  `content.buffLabels` + its tick order to `content.statusTickOrder`.
 - **New/changed sprite** → edit the SVG in `assets/sprites/` directly; keep the
   conventions (clean viewBox 0 0 800 800, layered <g> ids, gradients in <defs>).
   The **hero** is an inline `<svg>` in `index.html` (four recolorable
   equipment groups driven by CSS variables; see `js/ui/equipIcons.js`).
 - **New screen** → add a `<section class="screen hidden" id="screen-…">` to
   `index.html` and a case in the flow in `js/main.js`.
-- **New action** → add handling in `Combat.act()` / `canAct()` and a button in
-  `index.html` + `js/main.js` binding.
+- **New action** → add handling in `BattleEngine.act()` / `canAct()`
+  (`js/engine/engine.js`) and a button in `index.html` + `js/main.js` binding.
+- **Serve a different game on the same engine** → write a new content pack
+  (`js/content/`) + hero/enemy builders, and construct `BattleEngine` with it.
+  `js/engine/engine.js` is untouched.
 
 ## Save format (v4)
 

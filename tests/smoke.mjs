@@ -13,12 +13,12 @@ if (typeof globalThis.localStorage === 'undefined') {
 }
 import { Player } from '../js/game/player.js';
 import { Progression } from '../js/game/progression.js';
-import { createEnemy, isBossStage, poolForStage, elementMultFor } from '../js/game/enemies.js';
+import { createEnemy, isBossStage, poolForStage, elementMultFor } from '../js/content/enemies.js';
 import { Combat } from '../js/game/combat.js';
 import { EventBus } from '../js/core/events.js';
 import { SaveStore, DEFAULT_SAVE } from '../js/core/save.js';
-import { TUNING } from '../js/config/tuning.js';
-import { pickSkillChoices, poolFor, skillLine, candidatesFor, isPlainDamage, TIER_BLOCKS, TIER_COSTS, TIER_MULTS, SKILLS } from '../js/game/skills.js';
+import { TUNING } from '../js/content/tuning.js';
+import { pickSkillChoices, poolFor, skillLine, candidatesFor, isPlainDamage, TIER_BLOCKS, TIER_COSTS, TIER_MULTS, SKILLS } from '../js/content/skills.js';
 import { xpForNext } from '../js/game/upgrades.js';
 import { EQUIPMENT, pieceName, nextTier } from '../js/game/equipment.js';
 
@@ -380,7 +380,7 @@ async function testLootGoblin() {
   bus.on('phase', (d) => phases.push(d));
   const c = new Combat(p, gb, bus);
   c.start();
-  assert.equal(c.e.goblin, true, 'combat flags the goblin');
+  assert.equal(c.e.flee, true, 'combat flags the passive flee enemy');
 
   c.act('guard');
   await tick();
@@ -645,12 +645,12 @@ async function testWardenLightning() {
   // Stage 15 warden (cavern, tier 2 = 1.5x) and stage 25 (dungeon, 1.75x).
   const w15 = createEnemy(15, 0);
   assert.equal(w15.id, 'warden', 'cavern pool has the Warden');
-  assert.equal(w15.lightningMult, 1.5, 'stage-15 Warden strikes at tier 2 (1.5x)');
+  assert.equal(w15.attackStyle.mult, 1.5, 'stage-15 Warden strikes at tier 2 (1.5x)');
   const w25 = createEnemy(25, 2);
   assert.equal(w25.id, 'warden', 'dungeon pool has the Warden');
-  assert.equal(w25.lightningMult, 1.75, 'stage-25 Warden strikes at tier 3 (1.75x)');
+  assert.equal(w25.attackStyle.mult, 1.75, 'stage-25 Warden strikes at tier 3 (1.75x)');
   const grunt = createEnemy(1, 0);
-  assert.equal(grunt.lightningMult, 1, 'non-Warden enemies have no lightning multiplier');
+  assert.equal(grunt.attackStyle, null, 'non-styled enemies have no attack style');
 
   // Damage math: 1.5x the stage-scaled atk (variance off, no defense).
   const p = new Player({ level: 10 });

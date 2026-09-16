@@ -1,6 +1,16 @@
-// Enemy generation per campaign stage: type system, stats, skills, scaling,
-// and per-stage limited enemy pools.
-import { TUNING } from '../config/tuning.js';
+// Ember Clash ENEMY CONTENT. Pure data + pure content functions. This is the
+// content pack's monster catalog: creature types, per-enemy defs, per-stage
+// pools, biome bosses, and the stage -> enemy factory.
+//
+// The generic battle engine (js/engine/engine.js) never imports this module.
+// It consumes the already-built enemy object through a small GENERIC schema:
+//   behavior     : 'fleeOnHit' | null  — a passive enemy that waits, then flees
+//   attackStyle  : { fx, mult, tier } | null — a special basic-attack style
+//   loot         : { gold, items } | null    — dropped on a kill (not a flee)
+//   elementWeakness, skills, boss, ... are the rest of the generic model.
+//
+// Adding/changing/removing a monster = editing only this file.
+import { TUNING } from './tuning.js';
 import { weightedPick } from '../core/rng.js';
 import { TIER_MULTS } from './skills.js';
 
@@ -50,18 +60,25 @@ export function weaknessOf(type) {
 }
 
 // Regular (non-boss) enemies. Adding an enemy = adding an entry here.
+// `behavior`, `attackStyle` and `loot` are the GENERIC schema fields the
+// engine understands (see the header). `loot` is consumed by the app layer
+// (js/main.js), never by the engine.
 export const ENEMY_DEFS = {
   grunt: { id: 'grunt', name: 'Grunt', sprite: 'grunt', type: 'beast', hp: 60, atk: 9, skills: [] },
   brute: { id: 'brute', name: 'Brute', sprite: 'brute', type: 'demon', hp: 48, atk: 13, skills: ['enrage'] },
-  warden: { id: 'warden', name: 'Warden', sprite: 'warden', type: 'construct', hp: 85, atk: 7, skills: ['shell'], lightning: true },
+  warden: { id: 'warden', name: 'Warden', sprite: 'warden', type: 'construct', hp: 85, atk: 7, skills: ['shell'], attackStyle: 'lightning' },
   stinger: { id: 'stinger', name: 'Stinger', sprite: 'stinger', type: 'insect', hp: 55, atk: 11, skills: ['venom'] },
   skeleton: { id: 'skeleton', name: 'Skeleton', sprite: 'skeleton', type: 'undead', hp: 58, atk: 12, skills: ['shell'] },
   wyvern: { id: 'wyvern', name: 'Wyvern', sprite: 'wyvern', type: 'beast', hp: 52, atk: 12, skills: ['enrage'] },
   slime: { id: 'slime', name: 'Slime', sprite: 'slime', type: 'beast', hp: 45, atk: 8, skills: ['shell'], elementWeakness: { fire: 1.5, ice: 1.5, lightning: 1.5 } },
   // The Loot Goblin: appears in place of any non-boss stage enemy (10%).
-  // It never attacks: it waits, and flees the turn after you attack it.
-  // Kill it for a 200-gold + potion/vial drop.
-  lootgoblin: { id: 'lootgoblin', name: 'Loot Goblin', sprite: 'lootgoblin', type: 'beast', hp: 55, atk: 6, skills: ['flee'] },
+  // Generic behavior 'fleeOnHit': it never attacks; it waits, and flees the
+  // turn after you attack it. Kill it for a 200-gold + potion/vial drop.
+  lootgoblin: {
+    id: 'lootgoblin', name: 'Loot Goblin', sprite: 'lootgoblin', type: 'beast',
+    hp: 55, atk: 6, skills: [], behavior: 'fleeOnHit',
+    loot: { gold: 200, items: ['potion', 'vial'] },
+  },
 };
 
 // Limited per-stage pools: each biome (10 stages) draws only from its pool.
@@ -112,7 +129,7 @@ export function createEnemy(stage, baseIndex) {
   const boss = isBossStage(stage);
 
   let base;
-  if (stage === TUNING.stage.victoryStage) {
+  if (stage === t.stage.victoryStage) {
     base = { ...FINAL_BOSS };
   } else if (boss) {
     const b = BOSSES[(stage / t.stage.bossEvery - 1) % BOSSES.length];
@@ -166,9 +183,14 @@ export function createEnemy(stage, baseIndex) {
     energy: em.startEnergy,
     boss,
     stage,
-    // Wardens attack with lightning at the tier of their current 10-stage
-    // area (T1 1.25x ... T5 2.25x).
-    lightningMult: base.lightning ? TIER_MULTS[Math.min(4, Math.floor((stage - 1) / 10))] : 1,
+    // GENERIC schema fields (consumed by the engine / app layer):
+    behavior: base.behavior ?? null,
+    loot: base.loot ?? null,
+    // A Warden's basic attack is lightning at the tier of its 10-stage area
+    // (T1 1.25x ... T5 2.25x). Expressed as a generic attackStyle.
+    attackStyle: base.attackStyle
+      ? { fx: base.attackStyle, tier: Math.min(4, Math.floor((stage - 1) / 10)), mult: TIER_MULTS[Math.min(4, Math.floor((stage - 1) / 10))] }
+      : null,
   };
 }
 

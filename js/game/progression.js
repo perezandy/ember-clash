@@ -1,9 +1,9 @@
 // Campaign progression: XP/levels, stage rewards, stage advancing,
 // level-up skill learning. Owns the persisted save object's `stage` and
 // `stats` alongside the Player.
-import { TUNING } from '../config/tuning.js';
+import { TUNING } from '../content/tuning.js';
 import { xpForNext } from './upgrades.js';
-import { pickSkillChoices } from './skills.js';
+import { pickSkillChoices } from '../content/skills.js';
 import { randInt } from '../core/rng.js';
 
 export class Progression {

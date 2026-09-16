@@ -4,11 +4,11 @@ import { EventBus } from './core/events.js';
 import { SaveStore } from './core/save.js';
 import { Player } from './game/player.js';
 import { Progression } from './game/progression.js';
-import { createEnemy, KNOWN_ENEMY_IDS } from './game/enemies.js';
+import { createEnemy, KNOWN_ENEMY_IDS } from './content/enemies.js';
 import { Combat } from './game/combat.js';
 import { xpForNext } from './game/upgrades.js';
-import { SKILL_MAP, MAX_SKILLS } from './game/skills.js';
-import { TUNING } from './config/tuning.js';
+import { SKILL_MAP, MAX_SKILLS } from './content/skills.js';
+import { TUNING } from './content/tuning.js';
 import { recordKill } from './game/bestiary.js';
 import { EQUIPMENT, EQUIPMENT_SLOTS, pieceName, nextTier, statLine } from './game/equipment.js';
 import { equipIconSvg } from './ui/equipIcons.js';
@@ -101,13 +101,16 @@ function onStageWon(bonus, fled = false) {
   player.currentEnergy = combat.p.energy;
   const reward = progression.onStageWon(stage, bonus, fled);
   if (!fled) recordKill(save.bestiary, combat.enemy);
-  // Loot Goblin drop (kill only): 200 gold + a potion or an energy vial.
+  // Data-driven kill loot (from the enemy's generic `loot` field): gold + a
+  // random item from the drop table. Only on a kill, not a flee.
   let goblinLoot = '';
-  if (combat.enemy.id === 'lootgoblin' && !fled) {
-    player.gold += 200;
-    const item = Math.random() < 0.5 ? 'potion' : 'vial';
+  const loot = combat.enemy.loot;
+  if (loot && !fled) {
+    player.gold += loot.gold;
+    const item = loot.items[Math.floor(Math.random() * loot.items.length)];
     player.items[item] += 1;
-    goblinLoot = ` LOOT GOBLIN: +200 gold, +1 ${item === 'potion' ? 'Potion' : 'Vial'}!`;
+    const displayName = TUNING.shop.items[item]?.name ?? item;
+    goblinLoot = ` ${combat.enemy.name}: +${loot.gold} gold, +1 ${displayName}!`;
   }
   persist();
   log.append({
