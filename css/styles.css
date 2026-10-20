@@ -66,6 +66,7 @@ body {
 .actor img {
   width: 100%;
   height: auto;
+  image-rendering: pixelated;
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.5));
 }
 .actor-player { left: 6%; }
@@ -167,7 +168,7 @@ body {
 .shop-equip .btn { width: 100%; }
 
 /* Hero model: equipment tiers drive CSS variables (set by the HUD). */
-#hero-svg { width: 100%; height: 100%; display: block; }
+#hero-svg { width: 100%; height: auto; display: block; }
 #hero-svg .helm-main  { fill: var(--helm-main,  #c3cadb); }
 #hero-svg .helm-dark  { fill: var(--helm-dark,  #8792ac); }
 #hero-svg .chest-main { fill: var(--chest-main, #d5dbea); }
@@ -183,7 +184,7 @@ body {
 .bestiary-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
 .bestiary-card.undiscovered { opacity: 0.45; }
 .bestiary-card .b-head { display: flex; gap: 10px; align-items: center; }
-.bestiary-card img { width: 56px; height: 56px; }
+.bestiary-card img { width: 56px; height: 56px; image-rendering: pixelated; }
 .bestiary-card .b-name { font-weight: 600; }
 .bestiary-card .b-type { color: var(--accent); font-size: 12px; }
 .bestiary-card .b-line { font-size: 12px; color: var(--muted); margin-top: 6px; }
@@ -243,6 +244,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   width: 30%;
+  image-rendering: pixelated;
   filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.5));
 }
 

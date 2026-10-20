@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ember Clash</title>
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/revamp.css" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='6' y='1' width='4' height='10' fill='%23ffb347'/%3E%3Crect x='4' y='11' width='8' height='2' fill='%238b90a8'/%3E%3Crect x='6' y='13' width='4' height='2' fill='%235a4632'/%3E%3C/svg%3E" />
 </head>
 <body>
   <main id="app">
 
     <section id="screen-menu" class="screen">
-      <h1 class="title">Ember Clash</h1>
-      <p class="subtitle">A turn-based combat journey. Win stages, gain levels, learn skills, face bosses.</p>
+      <p class="eyebrow">A journey through ash &amp; shadow</p><h1 class="title">Ember <span>Clash</span></h1>
+      <p class="subtitle">One hero. Fifty trials. A fire that refuses to fade.</p>
       <div class="menu-stats" id="menu-stats"></div>
       <div class="menu-buttons">
         <button id="btn-start" class="btn btn-primary">Begin Campaign</button>
@@ -24,7 +25,7 @@
     </section>
 
     <section id="screen-combat" class="screen hidden">
-      <div id="stage-label" class="stage-label"></div>
+      <div class="battle-brand" aria-hidden="true">EMBER / CLASH</div><div id="stage-label" class="stage-label"></div>
       <div class="scene" id="battlefield">
         <div class="hud-corner" id="player-panel">
           <div class="stat-name" id="player-name">Hero</div>
@@ -40,7 +41,7 @@
           <div class="buff-chips" id="enemy-buffs"></div>
         </div>
         <div class="actor actor-player" id="player-sprite">
-          <svg id="hero-svg" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
+          <svg id="hero-svg" role="img" aria-label="Hero knight" viewBox="0 0 800 800" xmlns="http://www.w3.org/2000/svg">
             <g id="hero-shadow">
               <ellipse cx="400" cy="745" rx="230" ry="42" fill="#000" opacity="0.35"/>
             </g>

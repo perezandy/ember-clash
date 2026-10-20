@@ -1,0 +1,84 @@
+/* Presentation layer only. Keep game IDs and event-driven interactions intact. */
+:root { --bg:#090f18; --panel:#111c29; --panel-2:#1a2836; --text:#f0e9da; --muted:#a5b1b9; --accent:#e8bb75; --border:#39434b; --hp:#69b6a1; --hp-enemy:#d87a70; --energy:#d9b66b; }
+body { background:linear-gradient(90deg,#080f19e8,#080f1960),url('../assets/bg/vector/forest.svg') center/cover fixed; }
+#app { width:100%; padding:0; min-height:100svh; }
+.screen { width:min(1120px,92%); margin:auto; padding:48px 0; gap:24px; }
+.title { font-family:Georgia,serif; font-weight:400; font-size:clamp(32px,5vw,64px); letter-spacing:-1px; }
+.subtitle { line-height:1.7; max-width:650px; align-self:center; }
+.eyebrow { color:var(--accent); font-size:11px; letter-spacing:4px; text-transform:uppercase; }
+#screen-menu { min-height:100svh; justify-content:center; align-items:flex-start; padding:8vh 5vw; }
+#screen-menu .title { font-size:clamp(68px,10vw,148px); line-height:.95; text-align:left; max-width:700px; }
+#screen-menu .title span { display:block; color:var(--accent); }
+#screen-menu .subtitle { align-self:flex-start; text-align:left; font-size:18px; }
+#screen-menu .menu-stats { text-align:left; padding:18px 0; border-top:1px solid #d8ba7d40; }
+#screen-menu .menu-buttons { justify-content:flex-start; }
+#screen-menu .hint { text-align:left; max-width:650px; line-height:1.8; font-size:12px; }
+.btn { background:linear-gradient(145deg,#263440,#14212e); border:1px solid #59616a; border-radius:5px; min-height:48px; padding:13px 24px; font-weight:600; letter-spacing:.3px; box-shadow:0 4px 16px #0003; transition:background .2s,transform .2s,border-color .2s; }
+.btn-primary { background:linear-gradient(135deg,#edcc91,#bc8950); color:#211c17; border-color:#f2d7a5; }
+.btn:hover:not(:disabled) { border-color:var(--accent); filter:brightness(1.1); }
+button:focus-visible, [tabindex]:focus-visible { outline:3px solid #ffe0a7; outline-offset:4px; }
+#screen-combat { width:100%; height:100svh; min-height:640px; margin:0; padding:0; position:relative; display:block; isolation:isolate; }
+#battlefield { position:absolute; inset:0; width:100%; height:100%; aspect-ratio:auto; border:0; border-radius:0; image-rendering:auto; background-position:center; }
+#battlefield::before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(#050c17a6,transparent 30%,transparent 62%,#070d18ee),radial-gradient(ellipse at center,transparent 40%,#03091466); }
+.battle-brand { position:absolute; top:24px; left:32px; z-index:8; color:#cbd1d5; font-size:10px; letter-spacing:3px; }
+.stage-label { position:absolute; top:20px; left:50%; transform:translateX(-50%); z-index:8; border-bottom:1px solid #dabc7955; padding:0 24px 12px; font-size:12px; text-transform:uppercase; letter-spacing:3px; white-space:nowrap; }
+.hud-corner { top:76px; left:clamp(20px,4vw,70px); width:clamp(220px,25vw,350px); padding:20px; gap:9px; align-items:flex-start; background:linear-gradient(135deg,#0c1825eb,#15212eb8); border:1px solid #7d8e9940; border-top:2px solid #a2c5c1; border-radius:4px; box-shadow:0 12px 40px #0003; backdrop-filter:blur(12px); z-index:6; }
+.hud-corner.right { right:clamp(20px,4vw,70px); left:auto; border-top-color:#d79889; }
+.stat-name { font-family:Georgia,serif; font-size:20px; font-weight:400; }
+.stat-level { text-transform:uppercase; font-size:10px; letter-spacing:2px; }
+.bar { height:18px; border-radius:2px; border:1px solid #e5e9e01c; }
+.bar-fill { box-shadow:inset 0 2px 0 #fff3; }
+.bar-text { font-size:11px; font-variant-numeric:tabular-nums; }
+.intent { padding-top:6px; font-size:12px; }
+.buff-chips { min-height:0; }
+.actor { bottom:22%; width:clamp(200px,27vw,440px); max-height:50%; z-index:2; }
+.actor-player { left:12%; }
+.actor-enemy { right:12%; bottom:22%; }
+.actor img, #hero-svg { width:100%; max-height:48svh; object-fit:contain; image-rendering:auto; filter:drop-shadow(0 20px 15px #0007); }
+#log { position:absolute; z-index:6; bottom:112px; left:50%; transform:translateX(-50%); width:min(680px,86%); height:78px; background:linear-gradient(90deg,transparent,#0b1422d9 15%,#0b1422d9 85%,transparent); border:0; border-radius:0; text-align:center; font-size:12px; line-height:1.65; scrollbar-width:thin; scrollbar-color:#687985 transparent; }
+#actions { position:absolute; z-index:10; bottom:max(24px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); width:min(760px,92%); padding:10px; gap:10px; background:#0b1522ed; border:1px solid #9fa58e40; border-radius:8px; box-shadow:0 14px 45px #0008; grid-template-columns:repeat(4,minmax(0,1fr)); }
+.actions .btn { min-height:58px; font-size:14px; justify-content:center; }
+.skills-menu { width:320px; max-width:85vw; max-height:50svh; overflow-y:auto; background:#101d2bf5; border-color:#a78c59; box-shadow:0 -15px 60px #0008; padding:10px; bottom:calc(100% + 18px); }
+.skill-wrap:last-child .skills-menu { left:auto; right:0; }
+.skill-item { padding:14px; line-height:1.5; border-radius:3px; }
+.skill-item:hover:not(:disabled) { border-color:var(--accent); background:#273644; }
+.shop,.card,.bestiary-card { background:linear-gradient(145deg,#192736ee,#101a28f5); border:1px solid #8e9a9950; border-radius:6px; box-shadow:0 14px 32px #0003; }
+.shop { padding:28px; }
+.shop-header { font-family:Georgia,serif; font-size:26px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+.shop-section { margin:24px 0 12px; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; }
+.shop-item { border-radius:4px; background:#142131; padding:18px; }
+#shop-scene { background-image:url('../assets/bg/vector/shop.svg'); height:32vh; min-height:220px; aspect-ratio:auto; image-rendering:auto; border-radius:8px; margin:0; }
+#shop-scene img { height:95%; width:auto; image-rendering:auto; }
+.bestiary-card { padding:24px; }
+.bestiary-card img { width:90px; height:90px; image-rendering:auto; }
+.card { padding:28px 18px; }
+.card .name { font-family:Georgia,serif; font-size:21px; }
+.card .desc { line-height:1.7; }
+#screen-gameover,#screen-victory { min-height:100svh; justify-content:center; }
+#screen-stageend > .menu-buttons { position:sticky; bottom:0; background:#0b1422ed; padding:14px; border-radius:6px; z-index:12; }
+@media (min-width:1500px) { .actor-player { left:18%; } .actor-enemy { right:18%; } }
+@media (max-width:700px) {
+ .battle-brand { display:none; }
+ .stage-label { top:12px; font-size:10px; }
+ .hud-corner { top:54px; left:12px; width:44%; padding:12px; gap:6px; }
+ .hud-corner.right { right:12px; }
+ .stat-name { font-size:16px; }
+ .actor { width:43vw; min-width:0; bottom:29%; }
+ .actor-player { left:3%; } .actor-enemy { right:3%; bottom:29%; }
+ #actions { gap:5px; padding:7px; bottom:16px; }
+ .actions .btn { font-size:12px; padding:8px 3px; min-height:54px; }
+ #log { bottom:102px; height:86px; }
+ .skills-menu { position:fixed; left:0; right:auto; bottom:90px; width:100%; max-width:none; }
+ .skill-wrap:last-child .skills-menu { right:0; }
+ .shop { padding:15px; } .shop-item { padding:12px; }
+ #levelup-replace-cards { grid-template-columns:repeat(2,1fr); }
+ #screen-menu { padding:6vh 4vw; }
+ #screen-menu .menu-buttons { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+ .screen { padding:30px 0; }
+}
+@media (max-height:600px) and (min-width:701px) {
+ #screen-combat { min-height:460px; }
+ .hud-corner { top:48px; padding:10px; gap:4px; }
+ .actor { bottom:23%; width:24vw; } #log { height:42px; bottom:100px; }
+}
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }

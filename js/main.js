@@ -45,7 +45,7 @@ function setEnvironment(stage) {
     ? ENV_TIERS[Math.floor((stage - 1) / 10) % ENV_TIERS.length]
     : ENV_TIERS[4];
   document.getElementById('battlefield').style.backgroundImage =
-    `url('assets/bg/${name}.png')`;
+    `url('assets/bg/vector/${name}.svg')`;
 }
 
 function persist() {
