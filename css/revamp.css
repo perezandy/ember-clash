@@ -132,3 +132,52 @@ body:has(#screen-stageend:not(.hidden) #shop-scene:not(.hidden)) {
 @media(max-width:700px) {
   #screen-stageend:has(#shop-scene:not(.hidden)) { padding:28px 4vw; }
 }
+
+/* Give the merchant a dedicated, unobstructed part of the shop scene. */
+@media (min-width:901px) {
+  #screen-stageend:has(#shop-scene:not(.hidden)) {
+    padding:40px 4vw 32px 43vw;
+  }
+  #screen-stageend #shop-scene img {
+    left:3vw;
+    right:auto;
+    bottom:10vh;
+    width:37vw;
+    max-height:76svh;
+    object-fit:contain;
+    opacity:1;
+    z-index:1;
+    filter:drop-shadow(0 20px 22px #0008);
+  }
+  #screen-stageend:has(#shop-scene:not(.hidden)) #shop-equipment {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media (max-width:900px) {
+  #screen-stageend:has(#shop-scene:not(.hidden)) {
+    padding:28px 4vw;
+  }
+  #screen-stageend #shop-scene:not(.hidden) {
+    position:relative;
+    inset:auto;
+    height:clamp(240px,38svh,380px);
+    flex:none;
+    order:-1;
+    z-index:auto;
+    background:none;
+    overflow:visible;
+  }
+  #screen-stageend #shop-scene::after { display:none; }
+  #screen-stageend #shop-scene img {
+    left:50%;
+    right:auto;
+    bottom:0;
+    transform:translateX(-50%);
+    width:auto;
+    height:100%;
+    max-width:100%;
+    object-fit:contain;
+    opacity:1;
+    filter:drop-shadow(0 15px 18px #0008);
+  }
+}
