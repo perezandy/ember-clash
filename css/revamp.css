@@ -181,3 +181,34 @@ body:has(#screen-stageend:not(.hidden) #shop-scene:not(.hidden)) {
     filter:drop-shadow(0 15px 18px #0008);
   }
 }
+
+/* Campaign atlas: five illustrated regions share one aerial world. */
+body:has(#screen-menu:not(.hidden)) {
+  background:#103d5b url('../assets/bg/vector/world.svg') center / cover fixed;
+}
+#screen-menu {
+  width:100%;
+  padding:8vh 5vw;
+  background:linear-gradient(90deg,#061423f5 0%,#071a2be6 22%,#071a2b88 35%,transparent 55%);
+}
+#screen-menu .title { font-size:clamp(64px,7vw,116px); }
+#screen-menu .subtitle,#screen-menu .menu-stats,#screen-menu .hint { max-width:360px; }
+#screen-menu .menu-buttons { display:grid; grid-template-columns:1fr 1fr; width:min(360px,100%); gap:10px; }
+#screen-menu #btn-start { grid-column:1/-1; min-height:60px; }
+#screen-menu #btn-reset { grid-column:1/-1; background:#0a19266b; border-color:#82969d44; font-size:12px; }
+#screen-menu .eyebrow { max-width:320px; line-height:1.8; }
+@media (max-width:900px) {
+ body:has(#screen-menu:not(.hidden)) { background-position:65% top; background-size:auto 65svh; background-repeat:no-repeat; background-color:#0a1a29; }
+ #screen-menu { padding:39svh 6vw 30px; background:linear-gradient(transparent 20svh,#091a2999 37svh,#091a29 56svh); align-items:center; }
+ #screen-menu .title { font-size:clamp(54px,12vw,82px); text-align:center; }
+ #screen-menu .title span { display:inline; }
+ #screen-menu .eyebrow { text-align:center; max-width:none; }
+ #screen-menu .subtitle { align-self:center; text-align:center; }
+ #screen-menu .menu-stats,#screen-menu .hint { text-align:center; }
+}
+@media (max-width:900px) {
+  body:has(#screen-menu:not(.hidden)) {
+    background-size:auto 43svh;
+    background-position:76% top;
+  }
+}
